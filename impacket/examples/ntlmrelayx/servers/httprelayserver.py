@@ -297,6 +297,7 @@ class HTTPRelayServer(Thread):
                     self.challengeMessage['TargetInfoFields_len'] = len(av_pairs.getData())
                     self.challengeMessage['TargetInfoFields_max_len'] = len(av_pairs.getData())
 
+
                 # Check for errors
                 if self.challengeMessage is False:
                     return False
@@ -370,13 +371,16 @@ class HTTPRelayServer(Thread):
 
                 self.target = self.server.config.target.getTarget(identity = self.authUser)
                 if self.target is None:
-                    LOG.info("HTTPD(%s): Connection from %s@%s controlled, but there are no more targets left!" %
-                        (self.server.server_address[1], self.authUser, self.client_address[0]))
-                    self.send_not_found()
                     if self.server.config.keepRelaying:
                         self.server.config.target.reloadTargets(full_reload=True)
-
-                    return
+                        self.target = self.server.config.target.getTarget(identity = self.authUser)
+                        if self.target is None:
+                            LOG.info("HTTPD(%s): Connection from %s@%s controlled, but there are no more targets left!" %
+                                (self.server.server_address[1], self.authUser, self.client_address[0]))
+                            self.send_not_found()
+                            return
+                    else:
+                        return
 
                 LOG.info("HTTPD(%s): Connection from %s@%s controlled, attacking target %s://%s" % (self.server.server_address[1],
                     self.authUser, self.client_address[0], self.target.scheme, self.target.netloc))
@@ -389,13 +393,16 @@ class HTTPRelayServer(Thread):
                 if self.server.config.disableMulti:
                     self.target = self.server.config.target.getTarget(multiRelay=False)
                     if self.target is None:
-                        LOG.info("HTTPD(%s): Connection from %s controlled, but there are no more targets left!" % (
-                            self.server.server_address[1], self.client_address[0]))
-                        self.send_not_found()
                         if self.server.config.keepRelaying:
                             self.server.config.target.reloadTargets(full_reload=True)
-
-                        return
+                            self.target = self.server.config.target.getTarget(multiRelay=False)
+                            if self.target is None:
+                                LOG.info("HTTPD(%s): Connection from %s controlled, but there are no more targets left!" % (
+                                    self.server.server_address[1], self.client_address[0]))
+                                self.send_not_found()
+                                return
+                        else:
+                            return
 
                     LOG.info("HTTPD(%s): Connection from %s controlled, attacking target %s://%s" % (
                         self.server.server_address[1], self.client_address[0], self.target.scheme, self.target.netloc))
@@ -423,13 +430,16 @@ class HTTPRelayServer(Thread):
                         self.target = self.server.config.target.getTarget(identity=self.authUser)
 
                         if self.target is None:
-                            LOG.info( "HTTPD(%s): Connection from %s@%s controlled, but there are no more targets left!" %
-                                (self.server.server_address[1], self.authUser, self.client_address[0]))
-                            self.send_not_found()
                             if self.server.config.keepRelaying:
                                 self.server.config.target.reloadTargets(full_reload=True)
-
-                            return
+                                self.target = self.server.config.target.getTarget(identity=self.authUser)
+                                if self.target is None:
+                                    LOG.info( "HTTPD(%s): Connection from %s@%s controlled, but there are no more targets left!" %
+                                        (self.server.server_address[1], self.authUser, self.client_address[0]))
+                                    self.send_not_found()
+                                    return
+                            else:
+                                return
 
                         LOG.info("HTTPD(%s): Connection from %s@%s controlled, attacking target %s://%s" % (self.server.server_address[1],
                             self.authUser, self.client_address[0], self.target.scheme, self.target.netloc))
@@ -463,13 +473,16 @@ class HTTPRelayServer(Thread):
                         # No anonymous login, go to next host and avoid triggering a popup
                         self.target = self.server.config.target.getTarget(identity=self.authUser)
                         if self.target is None:
-                            LOG.info("HTTPD(%s): Connection from %s@%s controlled, but there are no more targets left!" %
-                                (self.server.server_address[1], self.authUser, self.client_address[0]))
-                            self.send_not_found()
-
                             if self.server.config.keepRelaying:
                                 self.server.config.target.reloadTargets(full_reload=True)
-                            return
+                                self.target = self.server.config.target.getTarget(identity=self.authUser)
+                                if self.target is None:
+                                    LOG.info("HTTPD(%s): Connection from %s@%s controlled, but there are no more targets left!" %
+                                        (self.server.server_address[1], self.authUser, self.client_address[0]))
+                                    self.send_not_found()
+                                    return
+                            else:
+                                return
 
                         self.send_not_found()  # Stop relaying at first login fail, this matches the behavior of smbrelayserver
 
